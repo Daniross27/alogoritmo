@@ -1,0 +1,103 @@
+#include <iostream>
+#include <vector>
+#include <chrono>
+#include <random>
+#include <limits>
+#include <fstream>
+
+using namespace std;
+using namespace std::chrono;
+
+
+void insertionSort(vector<int>& A, int p, int r) {
+    for (int i = p + 1; i <= r; i++) {
+        int key = A[i];
+        int j = i - 1;
+        while (j >= p && A[j] > key) {
+            A[j + 1] = A[j];
+            j--;
+        }
+        A[j + 1] = key;
+    }
+}
+
+
+void mergeSort(vector<int>& A, int p, int q, int r) {
+    int n1 = q - p + 1;
+    int n2 = r - q;
+
+    vector<int> L(n1 + 1);
+    vector<int> R(n2 + 1);
+
+    for (int i = 0; i < n1; i++) {
+        L[i] = A[p + i];
+    }
+    for (int j = 0; j < n2; j++) {
+        R[j] = A[q + 1 + j];
+    }
+
+    L[n1] = numeric_limits<int>::max();
+    R[n2] = numeric_limits<int>::max();
+
+    int i = 0;
+    int j = 0;
+
+    for (int k = p; k <= r; k++) {
+        if (L[i] <= R[j]) {
+            A[k] = L[i];
+            i++;
+        } else {
+            A[k] = R[j];
+            j++;
+        }
+    }
+}
+void AlgoHibrido(vector<int>& A, int p, int r, int k) {
+    if (r - p + 1 <= k) {
+        insertionSort(A, p, r);
+    }
+    else if (p < r) {
+        int q = p + (r - p) / 2;
+        AlgoHibrido(A, p, q, k);
+        AlgoHibrido(A, q + 1, r, k);
+        mergeSort(A, p, q, r);
+    }
+}
+
+int main() {
+    const int N = 1000000;
+    vector<int> original_arr(N);
+
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> dis(1, 10000000);
+
+    for (int i = 0; i < N; i++) {
+        original_arr[i] = dis(gen);
+    }
+
+    vector<int> k_values = {1, 2, 4, 8, 16, 32, 64, 128};
+
+    cout << "tiempo de ejecucion para un millon de numeros" << endl;
+
+    ofstream csv("resultados.csv");
+    csv << "k,tiempo_ms\n";
+
+    for (int k : k_values) {
+        vector<int> arr = original_arr;
+
+        auto start = high_resolution_clock::now();
+        AlgoHibrido(arr, 0, N - 1, k);
+        auto stop = high_resolution_clock::now();
+
+        auto duration = duration_cast<milliseconds>(stop - start);
+        cout << "k = " << k << " \t Tiempo: " << duration.count() << " ms" << endl;
+
+        csv << k << "," << duration.count() << "\n";
+    }
+
+    csv.close();
+    cout << "\nResultados guardados en resultados.csv" << endl;
+
+    return 0;
+}
